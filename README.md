@@ -1,4 +1,4 @@
-## Foxes and Rabbits
+### Foxes and Rabbits
 This repository contains a programming project regarding Parallel and Distributed Computing
 
 ```C
