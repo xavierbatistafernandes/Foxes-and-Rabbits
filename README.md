@@ -1,7 +1,7 @@
 # Foxes and Rabbits
 This repository contains a programming project regarding Parallel and Distributed Computing
 
-```
+```python
 MPI_Init (&argc, &argv);
 
 MPI_Comm_rank (MPI_COMM_WORLD, &id);
