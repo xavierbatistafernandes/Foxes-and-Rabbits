@@ -879,6 +879,7 @@ int main(int argc, char *argv[]){
     int dims[2] = {0, 0};
 
     if (argc != 11) {                        /*Verifies if number of args is correct*/
+        fprintf(stdout, "USAGE: %s <# generations> <M> <N> <# rocks> <# rabbits> <rabbit breeding> <# foxes> <fox breeding> <fox starvation> <seed>\n", argv[0]);
         exit(-1);
     }
 

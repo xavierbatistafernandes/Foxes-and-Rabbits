@@ -497,7 +497,8 @@ void compute_generation(Cell *curr_world, Cell *next_world, int *updated, int M,
 
     int c = 0;                                      /*Cell number*/
 
-    int num_threads = omp_get_num_threads();        /*Number of running threads*/     
+    int num_threads = omp_get_num_threads();        /*Number of running threads*/   
+    printf("NUM THREADS=%d\n", num_threads);  
     int num_tasks = 8*num_threads;                  /*Number of tasks to launch*/
     int L = (M + num_tasks - 1)/num_tasks;          /*The amount of work (rows) for each task to process*/
 
@@ -720,6 +721,7 @@ int main(int argc, char *argv[]) {
     Cell *next_world;                           /*Array for storing next world state*/
     
     if (argc != 11) {                           /*Verifies if number of args is correct*/
+        fprintf(stdout, "USAGE: %s <# generations> <M> <N> <# rocks> <# rabbits> <rabbit breeding> <# foxes> <fox breeding> <fox starvation> <seed>\n", argv[0]);
         exit(-1);
     }
 
