@@ -7,10 +7,10 @@ The goal is to explore the benefits of parallel programming on both shared-memor
 ## Program Versions
 There are four versions of the program, each implementing the simulation program in a different way:
 
-1. Serial Version: Runs the simulation sequentially without parallelization.
-2. OpenMP Version: Utilizes OpenMP for parallelization on shared-memory systems.
-3. MPI Version: Employs MPI for parallelization on distributed-memory systems.
-4. Hybrid Version: Combines OpenMP and MPI, providing parallelization on both shared-memory and distributed-memory systems.
+1. **Serial**: Runs the simulation sequentially without parallelization.
+2. **OpenMP**: Utilizes OpenMP for parallelization on shared-memory systems.
+3. **MPI**: Employs MPI for parallelization on distributed-memory systems.
+4. **Hybrid**: Combines OpenMP and MPI, providing parallelization on both shared-memory and distributed-memory systems.
 
 
 
@@ -21,7 +21,7 @@ This project uses the OpenMP library.
 
 In order to change the number of threads during execution, you need to change the environment variable.
 
-```bash
+```
 $ export OMP_NUM_THREADS=<number of threads>
 ```
 
@@ -62,7 +62,7 @@ To compile a specific version, move to the corresponding directory inside the 's
 
 The program takes ten command line parameters, all positive integers:
 
-```bash
+```
 $ ./foxes-rabbits <# generations> <M> <N> <# rocks> <# rabbits> <rabbit breeding> <# foxes> <fox breeding> <fox starvation> <seed>
 ```
 
