@@ -16,13 +16,12 @@ There are four versions of the program, each implementing the simulation program
 
 ## Requirements
 
-### Open Multithread-Processing (OpenMP)
-This project uses the OpenMP library.
-
-Through OpenMP it is possible to exploit parallelism within a shared-memory system (for instance, your local computer).
+### 1. Open Multithread-Processing (OpenMP)
+This project uses the OpenMP library. Through OpenMP it is possible to exploit parallelism within a shared-memory system 
+(for instance, your local computer).
 
 OpenMP provides directives for defining parallel regions (independent work loads) and work-sharing constructs. These enable 
-the creation of multiple threads that execute smaller tasks simultaneously within the same memory system.
+the creation of multiple threads which can then execute simultaneously smaller tasks within the same memory system.
 
 To specify the number of threads during execution, you need to change the `OMP_NUM_THREADS` environment variable.
 
@@ -30,18 +29,20 @@ To specify the number of threads during execution, you need to change the `OMP_N
 $ export OMP_NUM_THREADS=<number of threads>
 ```
 
+Replace `<number of threads>` with the desired numbers of threads to be launched during execution.
+
 For OpenMP documentation, see:
 - https://www.openmp.org/
 - http://gcc.gnu.org/projects/gomp
 - https://computing.llnl.gov/tutorials/openMP/
 
 
-### Open Message Passing Interface (OpenMPI)
+### 2. Open Message Passing Interface (OpenMPI)
 This project also utilizes the Message Passing Interface (MPI) implementation called OpenMPI.
 
 MPI enables parallelization not only in shared-memory systems but also in distributed-memory systems, such as clusters of computers.
 
-To execute the simulation across multiple computers, a cluster setup is required, which is beyond the scope of this repository.
+To execute the simulation across multiple computers, a cluster setup is required, but setting it up is beyond the scope of this repository.
 
 To run the simulation using OpenMPI on a single machine, you can use the following command:
 
@@ -70,21 +71,40 @@ For OpenMPI documentation, see:
 
 The simulation takes place on a square grid containing cells. At the start, some of the cells are
 occupied by either a rabbit, a fox, or a rock, the rest are empty. The simulation consists of computing
-how the population evolves over discrete time steps (generations) according to certain rules which are as follows:
+how the population evolves over discrete time steps (generations) according to certain rules.
 
-(TODO)
+A simplified version, for context, of the rules are as follows:
 
-A more detailed description of the simulation rules this project follows can be read in the 
-'project-description.pdf' file, in the Simulation Rules chapter.
+- ==Rocks== don’t move and neither animal can occupy cells with rocks (they are too steep to climb).
+- At each time step, a ==rabbit== tries to move to a neighboring empty cell. If no neighboring cell is empty, it stays.
+- At each time step, a ==fox== moves to a cell containing a ==rabbit==, eating it. When there are no ==rabbits==, the ==foxes==
+move to an empty cell.
+- Both ==rabbits== and ==foxes== move up or down, left or right, but not diagonally.
+- Both animals have a breeding age, which will leave a child behind when reached.
+- ==Rabbits== do not suffer from starvation, while foxes need to eat a rabbit before dying from starvation.
+
+The simulator progresses through a red-black scheme/organization:
+
+![Figure 1](images/figure1.png)
+
+This means that a single generation actually consists of two sub-generations. In the first sub-generation,
+only the red cells are processed, and in the second sub-generation the black cells are processed.
+The red-black scheme will help parallelize the computation of the cells. Cells of the same color
+are diagonal to each other, while the animals can only move parallel to the axes.
+
+
+For a more detailed version of the simulation rules, please consult 'project-description.pdf' inside the `docs` directory of this
+repository.
 
 
 
 ## Program Execution
 
-All four implementations are organized in this repository inside the 'src' directory.
+All four implementations are organized in this repository inside the `src` directory.
 For simplicity, each implementation consists of a single source file and its respective makefile.
-To compile a specific version, move to the corresponding directory inside the 'src' directory and run the 'make' command to generate the executable.
+To compile a specific version, move to the corresponding directory inside the `src` directory and run the `make` command to generate the executable.
 
+#### Input Data
 The program takes ten command line parameters, all positive integers:
 
 ```
@@ -93,6 +113,9 @@ $ ./foxes-rabbits <# generations> <M> <N> <# rocks> <# rabbits> <rabbit breeding
 
 Remember that for parallel implementions using OpenMP, you need to change the `OMP_NUM_THREADS` environment variable.
 
+#### Output Data
+All implementations send to standard output, `stdout`, just three integers in one line separated
+with one space in this order: the final number of ==rocks==, ==rabbits== and ==foxes==.
 
 
 ## Implementation Design
@@ -107,6 +130,14 @@ Remember that for parallel implementions using OpenMP, you need to change the `O
 
 
 ## Perfomance Analysis
+
+
+Table 2 contains the execution time of different tests ran on the lab machines to benchmark the performance of 
+our MPI implementation of the project (checkerboard decomposition). The table shows the execution times and speedups 
+obtained for 8, 16, 32 and 64 processes (inside the parenthesis are the total number of machines), for the following testing maps: (Note that no serial time is
+provided for the final 3 tests as they are too big to fit on a single machine and run serially and so the shown
+speedup is the speedup relative to the 8 process execution time)
+
 
 ![Table 1](images/table1.png)
 ![Table 2](images/table2.png)
