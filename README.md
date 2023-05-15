@@ -152,8 +152,8 @@ but also columns to the processes to the left and right and even some corner cel
 This is however, generally, a much more scalable approach, as, with the world split this way, the amount of
 communication processes have to make reduces as the number of processes increase. To reduce even further the
 communication between processes, we have adopted **ghost buffers** for data cells of different processes. By temporarly
-keeping copies of some of the rows and columns of different processes it is possible to perform more computation before
-communicating with the adjacent processes.
+keeping copies of some of the rows and columns of different processes, it is possible to perform more computation before
+having to communicate again with the adjacent processes.
 
 Communication was done by first copying
 the required rows/columns to a buffer and then utilizing the `MPI_Irecv` and `MPI_Isend` functions to send that
@@ -174,7 +174,7 @@ The considered simulation parameters are as follows in the table below:
 
 ![Table 1](images/table1.png)
 
-For reference, we have run each test multiple times. We used the serial implementation as reference, as with each execution we increased the number
+For reference, we have run each test multiple times. We used the serial implementation as reference, and with each execution we increased the number
 of processes launched.
 
 The following table shows the execution times and speedups obtained for 8, 16, 32 and 64 processes (inside the parenthesis are the total number of machines):
