@@ -75,13 +75,13 @@ how the population evolves over discrete time steps (generations) according to c
 
 A simplified version, for context, of the rules are as follows:
 
-- ==Rocks== don’t move and neither animal can occupy cells with rocks (they are too steep to climb).
-- At each time step, a ==rabbit== tries to move to a neighboring empty cell. If no neighboring cell is empty, it stays.
-- At each time step, a ==fox== moves to a cell containing a ==rabbit==, eating it. When there are no ==rabbits==, the ==foxes==
+- **Rocks** don’t move and neither animal can occupy cells with rocks (they are too steep to climb).
+- At each time step, a **rabbit** tries to move to a neighboring empty cell. If no neighboring cell is empty, it stays.
+- At each time step, a **fox** moves to a cell containing a **rabbit**, eating it. When there are no **rabbits**, the **foxes**
 move to an empty cell.
-- Both ==rabbits== and ==foxes== move up or down, left or right, but not diagonally.
+- Both **rabbits** and **foxes** move up or down, left or right, but not diagonally.
 - Both animals have a breeding age, which will leave a child behind when reached.
-- ==Rabbits== do not suffer from starvation, while foxes need to eat a rabbit before dying from starvation.
+- **Rabbits** do not suffer from starvation, while foxes need to eat a rabbit before dying from starvation.
 
 The simulator progresses through a red-black scheme/organization:
 
@@ -104,7 +104,7 @@ All four implementations are organized in this repository inside the `src` direc
 For simplicity, each implementation consists of a single source file and its respective makefile.
 To compile a specific version, move to the corresponding directory inside the `src` directory and run the `make` command to generate the executable.
 
-#### Input Data
+### Input Data
 The program takes ten command line parameters, all positive integers:
 
 ```
@@ -113,33 +113,76 @@ $ ./foxes-rabbits <# generations> <M> <N> <# rocks> <# rabbits> <rabbit breeding
 
 Remember that for parallel implementions using OpenMP, you need to change the `OMP_NUM_THREADS` environment variable.
 
-#### Output Data
+### Output Data
 All implementations send to standard output, `stdout`, just three integers in one line separated
-with one space in this order: the final number of ==rocks==, ==rabbits== and ==foxes==.
+with one space in this order: the final number of **rocks**, **rabbits** and **foxes**.
 
 
-## Implementation Design
+## Implementation Considerations
 
-### Serial
+In this section we will present our though process and strategies used to exploit parallelism in both OpenMP and MPI implementations.
 
 ### OpenMP
+Parallelizing this simulation poses challenges due to the inherent dependency between generations. Each new generation relies on the state of the previous one, making it impossible to parallelize the computation of different generations.
+
+One potential approach is to create a parallel region using `#pragma omp parallel` whenever a generation is computed. Within this region, the `#pragma omp for` directive can be used to distribute loop iterations among threads. However, this approach encounters issues, primarily race conditions where multiple threads attempt to write to the same cell. To address this, a critical region would need to be created, but this would result in seriously serializing the computation, leading to poor performance.
+
+A better alternative is to consider a row composition of the matrix:
+
+![Figure 2](images/figure2.png)
+
+By considering a block of a few consecutive rows and assigning its processing to a single thread, race conditions between threads are minimized, though still existant near each block margins. Thus, each block is a task which is scheduled to be assigned by one of the running threads. The tasks have dependencies specified using the `#pragma omp task` construct and the `depend` clause. A set of non-coalescent tasks is created first (orange), followed by the remaining tasks (green). Due to the OpenMP constructs used, a green task will only be processed when the adjacent orange tasks have finished processing.
+
 
 ### MPI
 
+One downside of the OpenMP implementation of the project is that maps had to be small enough to fit on
+one machine. By creating a message passing version of the program we can utilize different machines, which
+increases the amount of available resources, allowing us to solve very large maps.
+
+There is also the possibility of splitting the matrix into
+blocks with a certain number of rows and columns, i.e., a checkerboard decomposition:
+
+![Figure 3](images/figure3.png)
+
+This approach is more
+complex, as now processes will have to not only communicate rows to the processes above and below them,
+but also columns to the processes to the left and right and even some corner cells to processes diagonal to them.
+
+This is however, generally, a much more scalable approach, as, with the world split this way, the amount of
+communication processes have to make reduces as the number of processes increase. To reduce even further the
+communication between processes, we have adopted **ghost buffers** for data cells of different processes. By temporarly
+keeping copies of some of the rows and columns of different processes it is possible to perform more computation before
+communicating with the adjacent processes.
+
+Communication was done by first copying
+the required rows/columns to a buffer and then utilizing the `MPI_Irecv` and `MPI_Isend` functions to send that
+data to the right processes. `MPI_Waitall` is used to ensure that all messages have been sent and received before
+moving on to computation.
+
 ### Hybrid (OpenMP + MPI)
+
+The hybrid implementation combines both stategies adopted from OpenMP and OpenMPI.
 
 
 ## Perfomance Analysis
 
+## MPI
 
-Table 2 contains the execution time of different tests ran on the lab machines to benchmark the performance of 
-our MPI implementation of the project (checkerboard decomposition). The table shows the execution times and speedups 
-obtained for 8, 16, 32 and 64 processes (inside the parenthesis are the total number of machines), for the following testing maps: (Note that no serial time is
-provided for the final 3 tests as they are too big to fit on a single machine and run serially and so the shown
-speedup is the speedup relative to the 8 process execution time)
-
+We have measured the advantages of adopting MPI parallelism methodologies by running multiple simulations, each with a different set of parameters.
+The considered simulation parameters are as follows in the table below:
 
 ![Table 1](images/table1.png)
+
+For reference, we have run each test multiple times. We used the serial implementation as reference, as with each execution we increased the number
+of processes launched.
+
+The following table shows the execution times and speedups obtained for 8, 16, 32 and 64 processes (inside the parenthesis are the total number of machines):
+
 ![Table 2](images/table2.png)
+
+Note that no serial time is provided for the final 3 tests as they are too big to fit on a single machine. Thus, the shown speedup is the speedup relative to the 8 process execution time.
+
+
 
 
